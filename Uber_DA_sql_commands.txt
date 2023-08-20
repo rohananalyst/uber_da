@@ -1,0 +1,128 @@
+
+# Creating the database
+
+CREATE DATABASE uber_analytics;
+
+_______________________________________________________________________________________________________
+USE uber_analytics;
+
+-- Create a table named 'tbl_trip_data'
+create table tbl_trip_data (
+    job_uuid int,
+    client_uuid int,
+    driver_uuid int,
+    vehicle_uuid int,
+    client_device varchar(30),
+    is_subs_trip varchar(30),
+    request_type varchar(30),
+    `status` varchar(30),
+    request_date_time datetime,
+    begintrip_date_time datetime,
+    dropoff_date_time datetime,
+    trip_distance_miles decimal(10,6),
+    payment_method VARCHAR(30),
+    pickup_walking_distance decimal(15,5),
+    vehicle_capacity int,
+    trip_date date
+)
+_______________________________________________________________________________________________________
+
+USE uber_analytics;
+
+-- Create a table named 'tbl_vehicle_info'
+create table tbl_vehicle_info (
+	vehicle_uuid int,
+    vehicle_capacity int
+    
+)
+______________________________________________________________________________________________________
+
+# Populating the table `tbl_trip_data`
+
+USE uber_analytics;
+
+-- Load data from CSV file into the 'tbl_trip_data' table
+LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.1/Uploads/ExerciseData.csv'
+INTO TABLE tbl_trip_data
+FIELDS TERMINATED BY ',' 
+LINES TERMINATED BY '\n'
+IGNORE 1 LINES
+(
+    job_uuid, @client_uuid, @driver_uuid, @vehicle_uuid, client_device,
+    is_subs_trip, request_type, `status`, @request_date_time,
+    @begintrip_date_time, @dropoff_date_time, trip_distance_miles,
+    payment_method, @pickup_walking_distance, @vehicle_capacity, @trip_date
+)
+SET
+    begintrip_date_time = NULLIF(@begintrip_date_time, ''),
+    request_date_time = NULLIF(@request_date_time, ''),
+    dropoff_date_time = NULLIF(@dropoff_date_time, ''),
+    trip_date = NULLIF(@trip_date, ''),
+    driver_uuid = NULLIF(@driver_uuid, ''),
+    vehicle_uuid = NULLIF(@vehicle_uuid, ''),
+    client_uuid = NULLIF(@client_uuid, ''),
+    vehicle_capacity = NULLIF(@vehicle_capacity, ''),
+    pickup_walking_distance = NULLIF(@pickup_walking_distance, '');
+    
+
+_______________________________________________________________________________________________________
+
+# Populating the table `tbl_vehicle_info`
+
+
+USE uber_analytics;
+
+-- Load data from CSV file into the 'tbl_vehicle_info' table
+LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.1/Uploads/ExerciseData.csv'
+INTO TABLE tbl_vehicle_info
+FIELDS TERMINATED BY ',' 
+LINES TERMINATED BY '\n'
+IGNORE 1 LINES
+(
+   @job_uuid, @client_uuid, @driver_uuid, @vehicle_uuid, @client_device,
+    @is_subs_trip, @request_type, @`status`, @request_date_time,
+    @begintrip_date_time, @dropoff_date_time, @trip_distance_miles,
+    @payment_method, @pickup_walking_distance, @vehicle_capacity, @trip_date
+)
+SET
+    vehicle_uuid = NULLIF(@vehicle_uuid, ''),
+    vehicle_capacity = NULLIF(@vehicle_capacity, '');
+
+
+_______________________________________________________________________________________________________
+
+# standardising the data
+
+SET SQL_SAFE_UPDATES = 0;
+UPDATE uber_analytics.tbl_trip_data
+SET pickup_walking_distance = 0
+WHERE pickup_walking_distance IS NULL AND status = 'completed';
+
+_______________________________________________________________________________________________________
+
+FOUND AN ANOMALY:
+
+UPON:
+
+SELECT TIMESTAMPDIFF(MINUTE, request_date_time, begintrip_date_time) AS trip_duration_minutes, COUNT(*) AS num_trips
+FROM uber_analytics.tbl_trip_data
+WHERE request_type = 'PRESCHEDULING' AND status= 'driver_canceled'
+GROUP BY trip_duration_minutes
+
+FOUND:
+
+ 1 job_uuid = 7712 where the driver cancelled and the trip never ended.
+
+SELECT *
+FROM uber_analytics.tbl_trip_data
+WHERE request_type = 'PRESCHEDULING' AND status= 'driver_canceled' AND begintrip_date_time IS NOT NULL
+
+
+
+
+
+
+
+
+
+
