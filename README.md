@@ -11,6 +11,7 @@ Finally the visualizations and insights were presented using MS Powerpoint.
 Mysql DB Dump.
 Dataset in CSV format.
 ipynb notebook
+txt file containing the SQL commands for uploading the dataset to the DB.
 Powerpoint presentation in pptx format.
 
 Hope you find this project helpful.
